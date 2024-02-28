@@ -1,0 +1,56 @@
+% Tents can be placed in any free spot.
+{tent(X,Y):free(X,Y)}.
+
+% Tents cannot be placed beyond the boundaries of the grid
+:- tent(X,Y), lines(Z), X>Z.
+:- tent(X,Y), columns(Z), Y>Z.
+
+% Anything is a spot.
+spot(X,Y) :- free(X,Y).
+spot(X,Y) :- tree(X,Y).
+spot(X,Y) :- tent(X,Y).
+
+% Define directly bordering (not diagonally) with symmetry.
+bordering(X,Y,M,N) :- spot(X,Y), M=X, N=Y+1.
+bordering(X,Y,M,N) :- spot(X,Y), M=X+1, N=Y.
+bordering(X,Y,M,N) :- spot(X,Y), M=X, N=Y-1.
+bordering(X,Y,M,N) :- spot(X,Y), M=X-1, N=Y.
+bordering(X,Y,M,N) :- bordering(M,N,X,Y).
+
+% Define adjacent by adding diagonals.
+adjacent(X,Y,M,N) :- bordering(X,Y,M,N).
+adjacent(X,Y,M,N) :- spot(X,Y), M=X+1, N=Y+1.
+adjacent(X,Y,M,N) :- spot(X,Y), M=X+1, N=Y-1.
+adjacent(X,Y,M,N) :- spot(X,Y), M=X-1, N=Y+1.
+adjacent(X,Y,M,N) :- spot(X,Y), M=X-1, N=Y-1.
+adjacent(X,Y,M,N) :- adjacent(M,N,X,Y).
+
+% For every tree there must be at least one bordering tent.
+1 {tent(X,Y):bordering(X,Y,M,N)} :- tree(M,N).
+
+% Tents cannot be adjacent to one another.
+:- tent(X,Y), adjacent(X,Y,M,N), tent(M,N).
+
+% The total number of tents in each row must be equal to the given number.
+R {tent(X,Y):spot(X,Y)} R :- rowsum(X,R).
+
+% The total number of tents in each column must be equal to the given number.
+R {tent(X,Y):spot(X,Y)} R :- colsum(Y,R).
+
+% If the problem is well-defined, i.e. the numbers given for rowsums and colsums
+% add up to the total number of trees, these are not necessary. However, if the
+% problem is ill-defined, without these clauses a solution that allows tents to
+% serve more than one tree would still be allowed. Furthermore, the problem as
+% specified on Moodle doesn't impose any constraint on tents not being bordering
+% trees. Therefore here we use "greater than or equal" because solutions
+% might be possible where some tents aren't bordering any trees.
+
+% Total number of tents should be equal to or greater than the number of trees.
+R {tent(X,Y):spot(X,Y)} :- totaltrees(R).
+% A tent can only serve one tree.
+:- tree(X,Y), tent(W,Z), bordering(X,Y,W,Z), tree(M,N), bordering(W,Z,M,N), (M,N)!=(X,Y),
+{tent(G,F):bordering(X,Y,G,F),(G,F)!=(W,Z)} < 1,
+{tent(P,R):spot(G,F),bordering(M,N,P,R),(P,R)!=(G,F),(P,R)!=(W,Z)} < 1.
+
+% We only care about tents placements.
+#show tent/2.
