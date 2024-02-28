@@ -10,7 +10,7 @@ parser.add_argument("-s", "--solver", help="Allows to specify the name of a file
 parser.add_argument("-f", "--facts", help="Allows to specify the name of the file to use to store facts", dest="facts", default=facts_file)
 parser.add_argument("--graphic", help="Print the solution graphically (tents are indicated with the letter A)", action="store_true", dest="graphic", default=False)
 parser.add_argument("--to-file", help="Print the (graphical) solution to the specified filepath", dest="to_file", default=None)
-parser.add_argument("--pretty", help="Prettify the graphical output (if enabled) by spacing out cells so that they correctly lineup with the numbers given for columns at the bottom", action="store_true", dest="pretty", default=False)
+parser.add_argument("--pretty", help="Prettify the graphical output (if enabled) by placing sums for rows and columns before the grid and spacing out cells so that they line up with the respective column", action="store_true", dest="pretty", default=False)
 
 args = parser.parse_args()
 
@@ -47,14 +47,14 @@ with open(args.filename, "r") as fin:
                 graphical[i-1].append(c)
                 j += 1
             facts.append(f"rowsum({i},{int(sum)}).\n")
-            graphical[i-1].append(sum if args.pretty else " " + sum)
+            graphical[i-1].append(sum + " " if args.pretty else " " + sum)
         else:
             graphical.append([])
             j = 1
             sums = line.strip().split(" ")
             for sum in sums:
                 facts.append(f"colsum({j},{int(sum)}).\n")
-                graphical[i-1].append(sum + " ")
+                graphical[i-1].append(" " + sum)
                 j += 1
         i += 1
     facts.append(f"totaltrees({trees}).\n")
@@ -69,7 +69,12 @@ def model_solution(model):
         for symbol in model.symbols(shown=True):
             i, j = symbol.arguments[0].number, symbol.arguments[1].number
             graphical[i-1][j-1] = "A " if args.pretty else "A"
+        if args.pretty: 
+            graphical.insert(0, graphical.pop(-1))
+            for line in graphical[1:]:
+                line.insert(0, line.pop(-1))
         if args.graphic:
+            print(" ", end="")
             for line in graphical:
                 print("".join(line))
         if args.to_file:
