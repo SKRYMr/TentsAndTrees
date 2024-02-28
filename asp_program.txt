@@ -47,10 +47,16 @@ R {tent(X,Y):spot(X,Y)} R :- colsum(Y,R).
 
 % Total number of tents should be equal to or greater than the number of trees.
 R {tent(X,Y):spot(X,Y)} :- totaltrees(R).
-% A tent can only serve one tree.
-:- tree(X,Y), tent(W,Z), bordering(X,Y,W,Z), tree(M,N), bordering(W,Z,M,N), (M,N)!=(X,Y),
-{tent(G,F):bordering(X,Y,G,F),(G,F)!=(W,Z)} < 1,
-{tent(P,R):spot(G,F),bordering(M,N,P,R),(P,R)!=(G,F),(P,R)!=(W,Z)} < 1.
+
+% Define recursive connections between chains of trees and tents
+connected(X,Y,W,Z) :- tree(X,Y), tent(W,Z), bordering(X,Y,W,Z).
+connected(X,Y,W,Z) :- connected(X,Y,M,N), connected(M,N,W,Z).
+connected(X,Y,W,Z) :- connected(W,Z,X,Y).
+
+% Each tent can only serve one tree, modelled in such a way that when a chain of connections is present,
+% the number of connected tents must always be greater than the number of connected trees
+% (because we don't count the starting tree).
+:- tree(X,Y), {tree(W,Z):connected(X,Y,W,Z),(W,Z)!=(X,Y)} = R, {tent(M,N):connected(X,Y,M,N)} <= R.
 
 % We only care about tents placements.
 #show tent/2.
